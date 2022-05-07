@@ -1,47 +1,41 @@
-from typing import Optional
+from asyncore import read
+import os.path
+import json
 
 from fastapi import FastAPI
-from pydantic import BaseModel
+
+from blog_manager import Blog, BlogManager
 
 app = FastAPI()
+app.state.blog_manager = BlogManager()
 
+@app.on_event("startup")
+async def startup_event():
+    if not os.path.isfile('data.json'):
+        return
+    with open('data.json', 'r') as f:
+        file = f.read()
+        parsed_data = json.loads(file)
+        app.state.blog_manager.storage = [Blog(**blog) for blog in parsed_data]
+        # for blog in parsed_data:
+        #     app.state.blog_manager.add_blog(Blog(**blog))
 
-@app.get('/')
-def start():
-    return {'data': 'Hello!'}
+@app.on_event('shutdown')
+async def shutdown_event():
+    if not app.state.blog_manager.storage:
+        return
+    data = [blog.dict() for blog in app.state.blog_manager.storage]
+    with open('data.json', 'w') as f:
+        json.dump(data, f)
 
+@app.get('/blogs')
+def get_blogs():
+    return app.state.blog_manager.storage
 
-@app.get('/blog')
-def index(limit=10, published: bool = True, sort: Optional[str] = None):
-    if published:
-        return {'data': f'{limit} published blogs from the db'}
-    else:
-        return {'data': f'{limit} blogs from the db'}
+@app.post('/blogs')
+def create_blog(blog: Blog):
+    app.state.blog_manager.add_blog(blog)
 
-
-@app.get('/blog/unpublished')
-def unpublished():
-    return {'data': 'all unpublished blogs'}
-
-
-@app.get('/blog/{id}')
-def show(id: int):
-    # fetch blog with id = id
-    return {'data': id}
-
-
-@app.get('/blog/{id}/comments')
-def comments(id, limit=10):
-    # fetch comments of blog with id = id
-    return {'data': {'1', '2'}}
-
-
-class Blog(BaseModel):
-    title: str
-    body: str
-    published: Optional[bool]
-
-
-@app.post('/blog')
-def create_blog(fblog: Blog):
-    return {'data': f'blog is created width title as {fblog.title}'}
+@app.delete('/blogs/{blog_id}')
+def delete_blog(blog_id: int):
+    app.state.blog_manager.remove_blog_by_id(blog_id)
