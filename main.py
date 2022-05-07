@@ -1,41 +1,34 @@
-from asyncore import read
-import os.path
-import json
-
+from typing import Optional
 from fastapi import FastAPI
+
+import aioredis
 
 from blog_manager import Blog, BlogManager
 
 app = FastAPI()
-app.state.blog_manager = BlogManager()
 
 @app.on_event("startup")
 async def startup_event():
-    if not os.path.isfile('data.json'):
-        return
-    with open('data.json', 'r') as f:
-        file = f.read()
-        parsed_data = json.loads(file)
-        app.state.blog_manager.storage = [Blog(**blog) for blog in parsed_data]
-        # for blog in parsed_data:
-        #     app.state.blog_manager.add_blog(Blog(**blog))
+    redis_pool = aioredis.ConnectionPool.from_url('redis://localhost', max_connections=5)
+    redis = aioredis.Redis(connection_pool=redis_pool)
+    app.state.blog_manager = BlogManager(redis)
 
 @app.on_event('shutdown')
 async def shutdown_event():
-    if not app.state.blog_manager.storage:
-        return
-    data = [blog.dict() for blog in app.state.blog_manager.storage]
-    with open('data.json', 'w') as f:
-        json.dump(data, f)
+    pass
 
 @app.get('/blogs')
-def get_blogs():
-    return app.state.blog_manager.storage
+async def get_blogs():
+    return await app.state.blog_manager.get_blogs()
 
 @app.post('/blogs')
-def create_blog(blog: Blog):
-    app.state.blog_manager.add_blog(blog)
+async def create_blog(blog: Blog):
+    await app.state.blog_manager.add_blog(blog)
 
 @app.delete('/blogs/{blog_id}')
-def delete_blog(blog_id: int):
-    app.state.blog_manager.remove_blog_by_id(blog_id)
+async def delete_blog(blog_id: int):
+    await app.state.blog_manager.remove_blog_by_id(blog_id)
+
+@app.get('/blogs/{blog_id}')
+async def get_blog_by_id(blog_id: int) -> Optional[Blog]:
+    return await app.state.blog_manager.get_blog_by_id(blog_id)
