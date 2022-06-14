@@ -1,16 +1,20 @@
 from typing import Optional, List
 import json
+import uuid
 
 import aioredis
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 
 
 class Blog(BaseModel):
-    id: int
+    id: Optional[UUID4]
     title: str
     body: str
     published: Optional[bool]
 
+    def set_id(self):
+        self.id = str(uuid.uuid4())
+                
 
 class BlogManager:
     def __init__(self, redis: aioredis.Redis):
@@ -18,7 +22,8 @@ class BlogManager:
 
     async def add_blog(self, blog: Blog):
         async with self.storage.client() as conn:
-            await conn.set(str(blog.id), json.dumps(blog.dict()))
+            blog.set_id()
+            await conn.set(str(blog.id), blog.json())
     
     async def get_blog_by_id(self, blog_id: int) -> Optional[Blog]:
         async with self.storage.client() as conn:

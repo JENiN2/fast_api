@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 import aioredis
-import uvicorn
+from pydantic import UUID4
 
 from blog_manager import Blog, BlogManager
 from config import Config
@@ -35,11 +35,11 @@ async def create_blog(blog: Blog):
     await app.state.blog_manager.add_blog(blog)
 
 @app.delete('/blogs/{blog_id}')
-async def delete_blog(blog_id: int):
+async def delete_blog(blog_id: UUID4):
     await app.state.blog_manager.remove_blog_by_id(blog_id)
 
 @app.get('/blogs/{blog_id}')
-async def get_blog_by_id(blog_id: int) -> Optional[Blog]:
+async def get_blog_by_id(blog_id: UUID4) -> Optional[Blog]:
     return await app.state.blog_manager.get_blog_by_id(blog_id)
 
 
