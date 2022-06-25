@@ -2,6 +2,7 @@ from typing import Optional, List
 import json
 import uuid
 
+import asyncpg
 import aioredis
 from pydantic import BaseModel, UUID4
 
