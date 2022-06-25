@@ -1,12 +1,8 @@
 from functools import lru_cache
-from multiprocessing import Pool
 from typing import Optional
-import asyncio
 
 from fastapi import FastAPI, Depends
-from pydantic import UUID4
 import uvicorn
-import aioredis
 import asyncpg
 
 from blog_manager import Blog, BlogManager
@@ -14,25 +10,24 @@ from config import Config
 
 app = FastAPI()
 cfg = Config()
-app.state.config = cfg
 
 
 @lru_cache(maxsize=None)
-def get_redis_pool() -> aioredis.Redis:
-    return aioredis.Redis(connection_pool = aioredis.ConnectionPool.from_url(
-        'redis://{}'.format('localhost'),
-        max_connections=5,
-    ))
+def get_blog_manager() -> BlogManager:    
+    return BlogManager(app.state.pg_pool)
 
 
-@lru_cache(maxsize=None)
-def get_blog_manager() -> BlogManager:  
-    return BlogManager(get_redis_pool())
+@app.on_event('startup')
+async def startup():
+    app.state.pg_pool = await asyncpg.create_pool(
+        f'postgres://{cfg.pg_user}:{cfg.pg_password}@{cfg.pg_host}:{cfg.pg_port}/{cfg.pg_db}',
+        min_size=cfg.pg_pool_min_size,
+        max_size=cfg.pg_pool_max_size
+    )  
 
 
 @app.get('/blogs')
 async def get_blogs(bm: BlogManager = Depends(get_blog_manager)):
-    print(bm)  
     return await bm.get_blogs()
 
 
@@ -42,12 +37,12 @@ async def create_blog(blog: Blog, bm: BlogManager = Depends(get_blog_manager)):
 
 
 @app.delete('/blogs/{blog_id}')
-async def delete_blog(blog_id: UUID4, bm: BlogManager = Depends(get_blog_manager)):
+async def delete_blog(blog_id: int, bm: BlogManager = Depends(get_blog_manager)):
     await bm.remove_blog_by_id(blog_id)
 
 
 @app.get('/blogs/{blog_id}')
-async def get_blog_by_id(blog_id: UUID4, bm: BlogManager = Depends(get_blog_manager)) -> Optional[Blog]:
+async def get_blog_by_id(blog_id: int, bm: BlogManager = Depends(get_blog_manager)) -> Optional[Blog]:
     return await bm.get_blog_by_id(blog_id)
 
 

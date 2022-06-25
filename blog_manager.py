@@ -1,44 +1,40 @@
 from typing import Optional, List
-import json
-import uuid
 
 import asyncpg
-import aioredis
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 
 
 class Blog(BaseModel):
-    id: Optional[UUID4]
+    id: Optional[int] = None
     title: str
     body: str
-    published: Optional[bool]
-
-    def set_id(self):
-        self.id = str(uuid.uuid4())
+    published: bool
                 
 
 class BlogManager:
-    def __init__(self, redis: aioredis.Redis):
-        self.storage: aioredis.Redis = redis
+    def __init__(self, pg: asyncpg.Pool):
+        self.storage: asyncpg.Pool = pg
 
     async def add_blog(self, blog: Blog):
-        async with self.storage.client() as conn:
-            blog.set_id()
-            await conn.set(str(blog.id), blog.json())
-    
+        async with self.storage.acquire() as conn:
+            await conn.execute('''
+               INSERT INTO blogs (title, body, published) VALUES ($1, $2, $3)
+            ''', blog.title, blog.body, blog.published)                      
+                
     async def get_blog_by_id(self, blog_id: int) -> Optional[Blog]:
-        async with self.storage.client() as conn:
-            data = await conn.get(str(blog_id))
-        if not data:
-            return None
-        parsed_data = json.loads(data.decode())
-        return Blog(**parsed_data)
+        async with self.storage.acquire() as conn:
+            return await conn.fetch('''
+               SELECT * FROM blogs WHERE ID=($1)
+            ''', blog_id)        
     
-    async def remove_blog_by_id(self, id: int):
-        await self.storage.execute_command('del', str(id))
-    
+    async def remove_blog_by_id(self, blog_id: int):
+        async with self.storage.acquire() as conn:
+            await conn.execute('''
+               DELETE FROM blogs WHERE ID=($1)
+            ''', blog_id)    
+
     async def get_blogs(self) -> List[Blog]:
-        async with self.storage.client() as conn:
-            keys = map(bytes.decode, await conn.keys('*'))
-            data = await conn.mget(keys)
-        return [Blog(**json.loads(x)) for x in map(bytes.decode, data)]
+        async with self.storage.acquire() as conn:
+            return await conn.fetch('''
+               SELECT * FROM blogs
+            ''')
