@@ -6,7 +6,9 @@ import uvicorn
 import asyncpg
 
 from blog_manager import Blog, BlogManager
+from user_manager import User, UserManager
 from config import Config
+
 
 app = FastAPI()
 cfg = Config()
@@ -15,6 +17,11 @@ cfg = Config()
 @lru_cache(maxsize=None)
 def get_blog_manager() -> BlogManager:    
     return BlogManager(app.state.pg_pool)
+
+
+@lru_cache(maxsize=None)
+def get_user_manager() -> UserManager:
+    return UserManager(app.state.pg_pool)
 
 
 @app.on_event('startup')
@@ -26,24 +33,39 @@ async def startup():
     )  
 
 
-@app.get('/blogs')
+@app.get('/blogs', tags=['Blogs'])
 async def get_blogs(bm: BlogManager = Depends(get_blog_manager)):
     return await bm.get_blogs()
 
 
-@app.post('/blogs')
+@app.post('/blogs', tags=['Blogs'])
 async def create_blog(blog: Blog, bm: BlogManager = Depends(get_blog_manager)):
     await bm.add_blog(blog)
 
 
-@app.delete('/blogs/{blog_id}')
+@app.delete('/blogs/{blog_id}', tags=['Blogs'])
 async def delete_blog(blog_id: int, bm: BlogManager = Depends(get_blog_manager)):
     await bm.remove_blog_by_id(blog_id)
 
 
-@app.get('/blogs/{blog_id}')
+@app.get('/blogs/{blog_id}', tags=['Blogs'])
 async def get_blog_by_id(blog_id: int, bm: BlogManager = Depends(get_blog_manager)) -> Optional[Blog]:
     return await bm.get_blog_by_id(blog_id)
+
+
+@app.post('/users/', tags=['Users'])
+async def create_user(user: User, um: UserManager = Depends(get_user_manager)):
+    await um.add_user(user)
+
+
+@app.get('/users/', tags=['Users'])
+async def get_user(um: UserManager = Depends(get_user_manager)):
+    return await um.get_users()
+
+
+@app.delete('/users/{user_id}', tags=['Users'])
+async def get_user(user_id: int, um: UserManager = Depends(get_user_manager)):
+    return await um.remove_user_by_id(user_id)
 
 
 if __name__ == '__main__':
