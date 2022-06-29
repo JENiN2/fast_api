@@ -6,7 +6,7 @@ import uvicorn
 import asyncpg
 
 from blog_manager import Blog, BlogManager
-from user_manager import User, UserManager
+from user_manager import User, UserManager, UserLogin
 from config import Config
 
 
@@ -53,18 +53,23 @@ async def get_blog_by_id(blog_id: int, bm: BlogManager = Depends(get_blog_manage
     return await bm.get_blog_by_id(blog_id)
 
 
-@app.post('/users/', tags=['Users'])
-async def create_user(user: User, um: UserManager = Depends(get_user_manager)):
+@app.post('/register/', tags=['Users'])
+async def register_user(user: User, um: UserManager = Depends(get_user_manager)):
     await um.add_user(user)
 
 
+@app.post('/login/', tags=['Users'])
+async def login_user(login: UserLogin, um: UserManager = Depends(get_user_manager)):
+    return await um.login_user(login)
+
+
 @app.get('/users/', tags=['Users'])
-async def get_user(um: UserManager = Depends(get_user_manager)):
+async def get_users(um: UserManager = Depends(get_user_manager)):
     return await um.get_users()
 
 
 @app.delete('/users/{user_id}', tags=['Users'])
-async def get_user(user_id: int, um: UserManager = Depends(get_user_manager)):
+async def delete_user(user_id: int, um: UserManager = Depends(get_user_manager)):
     return await um.remove_user_by_id(user_id)
 
 

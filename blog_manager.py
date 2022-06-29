@@ -20,8 +20,7 @@ class BlogManager:
 
     async def add_blog(self, blog: Blog):
         async with self.storage.acquire() as conn:
-            dt = datetime.now(timezone.utc)
-            print(dt)
+            dt = datetime.now(timezone.utc)            
             await conn.execute('''
                INSERT INTO blogs (title, body, created, published) VALUES ($1, $2, $3, $4)
             ''', blog.title, blog.body, dt, blog.published)         
