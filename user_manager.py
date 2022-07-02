@@ -1,27 +1,14 @@
-from typing import Optional, List
+from typing import List
 
 from fastapi import HTTPException, status
 import asyncpg
-from pydantic import BaseModel
 
 from hashing import Hash
-from database_query import DBMixin
+from base_manager import BaseManager
+from schemas import User, UserLogin
 
 
-class User(BaseModel):
-    id: Optional[int] = None
-    login: str
-    first_name: str
-    last_name: str
-    password: str
-
-
-class UserLogin(BaseModel):
-    first_name: str
-    password: str    
-
-
-class UserManager(DBMixin):
+class UserManager(BaseManager):
     def __init__(self, pg: asyncpg.Pool):
         super().__init__(pg)
         self.storage: asyncpg.Pool = pg         

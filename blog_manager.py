@@ -2,21 +2,12 @@ from typing import Optional, List
 from datetime import datetime, timezone
 
 import asyncpg
-from pydantic import BaseModel
 
-from database_query import DBMixin
+from base_manager import BaseManager
+from schemas import Blog
 
 
-class Blog(BaseModel):
-    id: Optional[int] = None
-    title: str
-    body: str
-    created: str
-    published: bool
-    user_id: int    
-       
-
-class BlogManager(DBMixin):
+class BlogManager(BaseManager):
     def __init__(self, pg: asyncpg.Pool):
         super().__init__(pg)
         self.storage: asyncpg.Pool = pg
