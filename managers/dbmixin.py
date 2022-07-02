@@ -1,7 +1,7 @@
 import asyncpg
 
 
-class DBMixin():
+class DBMixin:
     def __init__(self, pg):
         self.pg: asyncpg.Pool = pg
 

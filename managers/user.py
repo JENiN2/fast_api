@@ -4,15 +4,11 @@ from fastapi import HTTPException, status
 import asyncpg
 
 from hashing import Hash
-from base_manager import BaseManager
+from .base import BaseManager
 from schemas import User, UserLogin
 
 
 class UserManager(BaseManager):
-    def __init__(self, pg: asyncpg.Pool):
-        super().__init__(pg)
-        self.storage: asyncpg.Pool = pg         
-
     async def add_user(self, user: User):        
         try:
             return await self.execute('INSERT INTO users (login, first_name, last_name, password) VALUES ($1, $2, $3, $4)',

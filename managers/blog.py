@@ -1,17 +1,11 @@
 from typing import Optional, List
 from datetime import datetime, timezone
 
-import asyncpg
-
-from base_manager import BaseManager
+from .base import BaseManager
 from schemas import Blog
 
 
 class BlogManager(BaseManager):
-    def __init__(self, pg: asyncpg.Pool):
-        super().__init__(pg)
-        self.storage: asyncpg.Pool = pg
-
     async def add_blog(self, blog: Blog):
         async with self.storage.acquire() as conn:
             dt = datetime.now(timezone.utc)
