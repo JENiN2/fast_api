@@ -5,9 +5,12 @@ import asyncpg
 from pydantic import BaseModel
 
 from hashing import Hash
+from database_query import DBMixin
+
 
 class User(BaseModel):
     id: Optional[int] = None
+    login: str
     first_name: str
     last_name: str
     password: str
@@ -18,35 +21,30 @@ class UserLogin(BaseModel):
     password: str    
 
 
-class UserManager:
+class UserManager(DBMixin):
     def __init__(self, pg: asyncpg.Pool):
-        self.storage: asyncpg.Pool = pg      
+        super().__init__(pg)
+        self.storage: asyncpg.Pool = pg         
 
-    async def add_user(self, user: User):
-        async with self.storage.acquire() as conn:            
-            await conn.execute('''
-               INSERT INTO users (first_name, last_name, password) VALUES ($1, $2, $3)
-            ''', user.first_name, user.last_name, Hash.bcrypt(user.password))
-
+    async def add_user(self, user: User):        
+        try:
+            return await self.execute('INSERT INTO users (login, first_name, last_name, password) VALUES ($1, $2, $3, $4)',
+                user.login, user.first_name, user.last_name, Hash.bcrypt(user.password)
+                )
+        except asyncpg.exceptions.UniqueViolationError:    
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='login already exists')
+                
     async def get_users(self) -> List[User]:
-        async with self.storage.acquire() as conn:
-            return await conn.fetch('''
-               SELECT * FROM users
-            ''')
+        return await self.fetch(query='SELECT * FROM users')
+        
+    async def login_user(self, login: UserLogin):                 
+        user = await self.fetchrow('SELECT first_name, password FROM users WHERE first_name=($1)', login.first_name)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Invalid Credentials')                                                
+        if not Hash.verify(user['password'], login.password):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Incorrect Password')            
+        return user     
 
-    async def login_user(self, login: UserLogin):
-        async with self.storage.acquire() as conn:
-            user = await conn.fetchrow('''
-               SELECT first_name, password FROM users WHERE first_name=($1)
-            ''', login.first_name) 
-            if not user:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid Credentials')                                                
-            if not Hash.verify(user['password'], login.password):
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect Password')            
-            return user     
-
-    async def remove_user_by_id(self, user_id: int):
-        async with self.storage.acquire() as conn:
-            await conn.execute('''
-               DELETE FROM users WHERE ID=($1)
-            ''', user_id)  
+    async def remove_user_by_id(self, user_id: int):        
+        return await self.execute('DELETE FROM users WHERE ID=($1)', user_id)
+        
