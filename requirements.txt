@@ -2,3 +2,4 @@ fastapi==0.78.0
 uvicorn==0.17.6
 asyncpg==0.25.0
 passlib==1.7.4
+python-multipart==0.0.5

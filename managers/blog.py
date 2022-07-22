@@ -3,11 +3,12 @@ from datetime import datetime, timezone
 
 from .base import BaseManager
 from schemas import Blog
+import schemas
 
 
 class BlogManager(BaseManager):
     async def add_blog(self, blog: Blog):
-        async with self.storage.acquire() as conn:
+        async with self.pg.acquire() as conn:
             dt = datetime.now(timezone.utc)
             return await self.execute('INSERT INTO blogs (title, body, created, published) VALUES ($1, $2, $3, $4)',
                 blog.title, blog.body, dt, blog.published

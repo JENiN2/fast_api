@@ -5,6 +5,7 @@ from starlette.requests import Request
 from managers import UserManager, BlogManager
 from config import Config
 
+
 cfg = Config()
 
 

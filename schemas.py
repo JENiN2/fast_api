@@ -23,3 +23,11 @@ class User(BaseModel):
 class UserLogin(BaseModel):
     first_name: str
     password: str    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    login: str | None = None

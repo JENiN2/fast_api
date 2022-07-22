@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from managers.user import UserManager, User, UserLogin
+from managers.user import UserManager, User
+from fastapi.security import OAuth2PasswordRequestForm
 from dependencies import get_user_manager
 
 
@@ -9,11 +10,11 @@ router = APIRouter(prefix="/Users")
 
 @router.post('/register/', tags=['Users'])
 async def register_user(user: User, um: UserManager = Depends(get_user_manager)):
-    await um.add_user(user)
+    return await um.add_user(user)
 
 
 @router.post('/login/', tags=['Users'])
-async def login_user(login: UserLogin, um: UserManager = Depends(get_user_manager)):
+async def login_user(login: OAuth2PasswordRequestForm = Depends(), um: UserManager = Depends(get_user_manager)):
     return await um.login_user(login)
 
 
