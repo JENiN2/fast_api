@@ -12,13 +12,17 @@ router = APIRouter(prefix="/blogs")
 
 
 @router.get('', tags=['Blogs'])
-async def get_blogs(bm: BlogManager = Depends(get_blog_manager), get_current_user: schemas.User = Depends(get_current_user)):    
+async def get_blogs(bm: BlogManager = Depends(get_blog_manager),
+    get_current_user: schemas.User = Depends(get_current_user)
+    ):    
     return await bm.get_blogs()
 
 
 @router.post('', tags=['Blogs'])
-async def create_blog(blog: Blog, bm: BlogManager = Depends(get_blog_manager), get_current_user: schemas.User = Depends(get_current_user)):
-    await bm.add_blog(blog)
+async def create_blog(blog: Blog, bm: BlogManager = Depends(get_blog_manager), 
+    get_current_user: schemas.User = Depends(get_current_user),        
+    ):    
+    await bm.add_blog(blog, get_current_user)
 
 
 @router.delete('/{blog_id}', tags=['Blogs'])

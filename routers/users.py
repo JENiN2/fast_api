@@ -26,3 +26,4 @@ async def get_users(um: UserManager = Depends(get_user_manager)):
 @router.delete('/users/{user_id}', tags=['Users'])
 async def delete_user(user_id: int, um: UserManager = Depends(get_user_manager)):
     return await um.remove_user_by_id(user_id)
+    

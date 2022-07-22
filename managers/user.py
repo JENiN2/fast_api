@@ -11,7 +11,8 @@ from schemas import User
 
 
 class UserManager(BaseManager):
-    async def add_user(self, user: User):        
+    async def add_user(self, user: User):
+        print(user, type(user))        
         try:
             return await self.execute('INSERT INTO users (login, first_name, last_name, password) VALUES ($1, $2, $3, $4)',
                 user.login, user.first_name, user.last_name, Hash.bcrypt(user.password)
@@ -19,7 +20,7 @@ class UserManager(BaseManager):
         except asyncpg.exceptions.UniqueViolationError:    
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='login already exists')                 
                 
-    async def get_users(self) -> List[User]:
+    async def get_users(self) -> List[User]:        
         return await self.fetch(query='SELECT * FROM users')
         
     async def login_user(self, login: OAuth2PasswordRequestForm = Depends()):                 
@@ -33,4 +34,8 @@ class UserManager(BaseManager):
 
     async def remove_user_by_id(self, user_id: int):        
         return await self.execute('DELETE FROM users WHERE ID=($1)', user_id)
-        
+
+    async def get_user_by_name(self, user_name: str):
+        #user: User = 
+        user = await self.fetchrow('SELECT id FROM users WHERE login=($1)', user_name)       
+        return user[0]
