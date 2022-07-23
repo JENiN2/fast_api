@@ -2,7 +2,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
 class Blog(BaseModel):
     id: Optional[int] = None
     title: str
@@ -10,7 +9,7 @@ class Blog(BaseModel):
     created: str
     published: bool
     user_id: int    
-       
+   
 
 class User(BaseModel):
     id: Optional[int] = None
@@ -18,11 +17,6 @@ class User(BaseModel):
     first_name: str
     last_name: str
     password: str
-
-
-class UserLogin(BaseModel):
-    first_name: str
-    password: str    
 
 
 class Token(BaseModel):

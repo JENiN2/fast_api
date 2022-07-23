@@ -1,10 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
 
 from managers.user import UserManager
 from dependencies import get_user_manager
-
-from jose import jwt, JWTError
 from schemas import TokenData, User
 from config import Config
 
