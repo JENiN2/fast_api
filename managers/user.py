@@ -24,18 +24,13 @@ class UserManager(BaseManager):
         return await self.fetch(query='SELECT * FROM users')
         
     async def login_user(self, login: OAuth2PasswordRequestForm = Depends()):                 
-        user = await self.fetchrow('SELECT first_name, password FROM users WHERE first_name=($1)', login.username)
+        user = await self.fetchrow('SELECT id, password FROM users WHERE login=($1)', login.username)
         if not user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Invalid Credentials')                                                
         if not Hash.verify(user['password'], login.password):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Incorrect Password')            
-        access_token = create_access_token(data={"sub": login.username})
-        return {"access_token": access_token, "token_type": "bearer"}    
+        access_token = create_access_token(data={'sub': login.username, 'id': user['id']})
+        return {'access_token': access_token, 'token_type': 'bearer'}    
 
     async def remove_user_by_id(self, user_id: int):        
-        return await self.execute('DELETE FROM users WHERE ID=($1)', user_id)
-
-    async def get_user_by_name(self, user_name: str):
-        #user: User = 
-        user = await self.fetchrow('SELECT id FROM users WHERE login=($1)', user_name)       
-        return user[0]
+        return await self.execute('DELETE FROM users WHERE ID=($1)', user_id)  

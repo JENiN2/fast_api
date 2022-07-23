@@ -14,10 +14,10 @@ class BlogManager(BaseManager):
                 )                            
                
     async def get_blog_by_id(self, blog_id: int) -> Optional[Blog]:
-        return await self.fetch('SELECT * FROM blogs WHERE ID=($1)', blog_id)                 
+        return await self.fetch('SELECT * FROM blogs WHERE ID=($1)', blog_id)              
     
     async def remove_blog_by_id(self, blog_id: int):
-        return await self.execute('DELETE FROM blogs WHERE ID=($1)', blog_id)       
-               
+        return await self.execute('DELETE FROM blogs WHERE ID=($1)', blog_id)        
+
     async def get_blogs(self) -> List[Blog]:
         return await self.fetch(query='SELECT * FROM blogs')
